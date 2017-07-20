@@ -35,20 +35,20 @@ post '/' do
     end
   end
 
-  #setting basic auth on RestClient
-  r = new RestClient.new({:user => jenkins_username, :password => jenkins_user_token })
-
+  
   # Jenkins url
   jenkins_job_url = "#{jenkins_url}/job/#{job}"
 
   # Get next jenkins job build number
-  resp = r.get "#{jenkins_job_url}/api/json"
+  
+  resp = RestClient::Request.execute method: :get, url: "#{jenkins_job_url}/api/json", user: jenkins_username, password: jenkins_token
   resp_json = JSON.parse( resp.body )
   next_build_number = resp_json['nextBuildNumber']
 
   # Make jenkins request
   json = JSON.generate( {:parameter => parameters} )
-  resp = r.post "#{jenkins_job_url}/build?token=#{jenkins_token}", :json => json
+  resp = RestClient::Request.execute method: :post, url: "#{jenkins_job_url}/build?token=#{jenkins_token}", :json => json, user: jenkins_username, password: jenkins_token
+  resp = RestClient.post 
 
   # Build url
   build_url = "#{jenkins_job_url}/#{next_build_number}"
