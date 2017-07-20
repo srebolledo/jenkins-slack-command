@@ -13,6 +13,8 @@ post '/' do
   return [403, "No slack token setup"] unless slack_token = ENV['SLACK_TOKEN']
   return [403, "No jenkins url setup"] unless jenkins_url= ENV['JENKINS_URL']
   return [403, "No jenkins token setup"] unless jenkins_token= ENV['JENKINS_TOKEN']
+  return [403, "No jenkins username setup"] unless jenkins_username= ENV['JENKINS_USERNAME']
+  return [403, "No jenkins user token setup"] unless jenkins_user_token= ENV['JENKINS_USER_TOKEN']
 
   # Verify slack token matches environment variable
   return [401, "No authorized for this command"] unless slack_token == params['token']
@@ -33,17 +35,20 @@ post '/' do
     end
   end
 
+  #setting basic auth on RestClient
+  r = new RestClient.new({:user => jenkins_username, :password => jenkins_user_token })
+
   # Jenkins url
   jenkins_job_url = "#{jenkins_url}/job/#{job}"
 
   # Get next jenkins job build number
-  resp = RestClient.get "#{jenkins_job_url}/api/json"
+  resp = r.get "#{jenkins_job_url}/api/json"
   resp_json = JSON.parse( resp.body )
   next_build_number = resp_json['nextBuildNumber']
 
   # Make jenkins request
   json = JSON.generate( {:parameter => parameters} )
-  resp = RestClient.post "#{jenkins_job_url}/build?token=#{jenkins_token}", :json => json
+  resp = r.post "#{jenkins_job_url}/build?token=#{jenkins_token}", :json => json
 
   # Build url
   build_url = "#{jenkins_job_url}/#{next_build_number}"
